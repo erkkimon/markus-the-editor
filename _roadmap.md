@@ -5,10 +5,10 @@ This roadmap outlines the key milestones and tasks for achieving the Minimum Via
 ## Milestone 1: Core Editing and Rendering
 
 *   **Objective:** Establish the fundamental real-time Markdown editing and rendering capabilities.
-    *   [ ] Set up Electron and React project structure.
-    *   [ ] Implement basic text area for Markdown input.
-    *   [ ] Integrate `Marked` for Markdown parsing.
-    *   [ ] Display real-time rendered output alongside the editor.
+    *   [x] Set up Electron and React project structure.
+    *   [x] Implement basic text area for Markdown input.
+    *   [x] Integrate `Marked` for Markdown parsing.
+    *   [x] Display real-time rendered output alongside the editor.
     *   [ ] Ensure basic Markdown syntax (headers, bold, italics, lists) renders correctly.
     *   [ ] Implement a clean, distraction-free UI layout.
 

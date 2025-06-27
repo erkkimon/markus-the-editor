@@ -1,38 +1,56 @@
-.App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.app-container {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
 }
 
-.App-link {
+.editor,
+.preview {
+  flex: 1;
+  padding: 20px;
+  border: 1px solid #333;
+  overflow-y: auto;
+}
+
+.editor {
+  background-color: #282c34;
+  color: white;
+  font-family: 'monospace';
+  font-size: 16px;
+  resize: none;
+  outline: none;
+}
+
+.preview {
+  background-color: #1e1e1e;
+  color: #e0e0e0;
+}
+
+/* Basic Markdown styling for preview */
+.preview h1, .preview h2, .preview h3, .preview h4, .preview h5, .preview h6 {
   color: #61dafb;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.preview pre {
+  background-color: #333;
+  padding: 10px;
+  border-radius: 5px;
+  overflow-x: auto;
+}
+
+.preview code {
+  font-family: 'monospace';
+  color: #e0e0e0;
+}
+
+.preview blockquote {
+  border-left: 4px solid #61dafb;
+  padding-left: 10px;
+  color: #aaa;
+}
+
+.preview ul,
+.preview ol {
+  margin-left: 20px;
 }
