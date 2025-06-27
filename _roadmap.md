@@ -15,7 +15,7 @@ This roadmap outlines the key milestones and tasks for achieving the Minimum Via
 ## Milestone 2: Native File Operations
 
 *   **Objective:** Enable users to open, save, and manage `.md` files directly on their local filesystem.
-    *   [ ] Implement "Open File" functionality (dialog to select `.md` file).
+    *   [x] Implement "Open File" functionality (dialog to select `.md` file).
     *   [ ] Implement "Save File" functionality (save current content to disk).
     *   [ ] Implement "Save As" functionality.
     *   [ ] Handle file content loading into the editor.

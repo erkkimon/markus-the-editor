@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron')
+const { app, BrowserWindow, ipcMain, dialog } = require('electron')
 const path = require('path')
 const isDev = require('electron-is-dev')
 
@@ -26,6 +26,20 @@ function createWindow () {
 
 app.whenReady().then(() => {
   createWindow()
+
+  ipcMain.handle('dialog:openFile', async () => {
+    const { canceled, filePaths } = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: [{ name: 'Markdown Files', extensions: ['md'] }],
+    })
+    if (canceled) {
+      return null
+    } else {
+      const filePath = filePaths[0]
+      const content = require('fs').readFileSync(filePath, 'utf-8')
+      return { filePath, content }
+    }
+  })
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
