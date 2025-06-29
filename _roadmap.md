@@ -19,7 +19,7 @@ This roadmap outlines the key milestones and tasks for achieving the Minimum Via
     *   [x] Implement "Save File" functionality (save current content to disk).
     *   [x] Implement "Save As" functionality.
     *   [x] Handle file content loading into the editor.
-    *   [ ] Implement change detection for external file modifications (warn user).
+    *   [x] Implement change detection for external file modifications (warn user).
 
 ## Milestone 3: Application Integration & Cross-Platform Support
 
