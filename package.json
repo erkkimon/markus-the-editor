@@ -2,15 +2,12 @@
   "name": "markus-the-writer",
   "private": true,
   "version": "0.0.0",
-  "main": "electron/main.js",
+  "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && electron-builder",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview",
-    "electron": "electron .",
-    "start": "electron .",
-    "package": "electron-builder"
+    "preview": "vite preview"
   },
   "dependencies": {
     "electron-is-dev": "^2.0.0",
@@ -26,11 +23,14 @@
     "@vitejs/plugin-react": "^4.2.1",
     "electron": "^29.1.0",
     "electron-builder": "^26.0.0",
+    "esbuild": "^0.25.5",
     "eslint": "^8.57.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react": "^7.34.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.6",
     "typescript": "^5.2.2",
-    "vite": "^5.2.0"
+    "vite": "^5.2.0",
+    "vite-plugin-electron": "^0.29.0",
+    "vite-plugin-electron-renderer": "^0.14.6"
   }
 }

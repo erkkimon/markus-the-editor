@@ -16,9 +16,9 @@ This roadmap outlines the key milestones and tasks for achieving the Minimum Via
 
 *   **Objective:** Enable users to open, save, and manage `.md` files directly on their local filesystem.
     *   [x] Implement "Open File" functionality (dialog to select `.md` file).
-    *   [ ] Implement "Save File" functionality (save current content to disk).
-    *   [ ] Implement "Save As" functionality.
-    *   [ ] Handle file content loading into the editor.
+    *   [x] Implement "Save File" functionality (save current content to disk).
+    *   [x] Implement "Save As" functionality.
+    *   [x] Handle file content loading into the editor.
     *   [ ] Implement change detection for external file modifications (warn user).
 
 ## Milestone 3: Application Integration & Cross-Platform Support
