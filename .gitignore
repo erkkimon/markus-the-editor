@@ -33,3 +33,4 @@ yarn.lock
 # Temporary files
 *.tmp
 *.temp
+mnt/*
