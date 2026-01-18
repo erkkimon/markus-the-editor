@@ -70,8 +70,10 @@ function createWindow() {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow?.show()
-    // Open DevTools in development
-    mainWindow?.webContents.openDevTools()
+    // Only open DevTools when running from dev server, not in production builds
+    if (VITE_DEV_SERVER_URL) {
+      mainWindow?.webContents.openDevTools()
+    }
   })
 
   mainWindow.on('resize', () => {

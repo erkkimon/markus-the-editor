@@ -44,13 +44,15 @@ npm install
 npm run dev:full
 ```
 
-This starts the Vite dev server and Electron together.
+This starts the Vite dev server and Electron together with hot reload. DevTools opens automatically.
 
-### Build
+### Run Production Build Locally
 
 ```bash
-npm run build
+npm run build && npm run electron
 ```
+
+This builds the app and runs it without hot reload or DevTools. Use this to test the production version before packaging.
 
 ### Package for Distribution
 
