@@ -21,37 +21,29 @@ export function setupGitHandlers(ipcMain: IpcMain, getCurrentFilePath: () => str
   })
 
   ipcMain.handle('git:status', async () => {
-    try {
-      const git = getGitInstance()
-      if (!git) throw new Error('No file open')
-      const status = await git.status()
-      return {
-        current: status.current,
-        tracking: status.tracking,
-        files: status.files.map(f => ({
-          path: f.path,
-          index: f.index,
-          working_dir: f.working_dir
-        })),
-        ahead: status.ahead,
-        behind: status.behind
-      }
-    } catch (error) {
-      throw error
+    const git = getGitInstance()
+    if (!git) throw new Error('No file open')
+    const status = await git.status()
+    return {
+      current: status.current,
+      tracking: status.tracking,
+      files: status.files.map(f => ({
+        path: f.path,
+        index: f.index,
+        working_dir: f.working_dir
+      })),
+      ahead: status.ahead,
+      behind: status.behind
     }
   })
 
   ipcMain.handle('git:branches', async () => {
-    try {
-      const git = getGitInstance()
-      if (!git) throw new Error('No file open')
-      const branches = await git.branchLocal()
-      return {
-        all: branches.all,
-        current: branches.current
-      }
-    } catch (error) {
-      throw error
+    const git = getGitInstance()
+    if (!git) throw new Error('No file open')
+    const branches = await git.branchLocal()
+    return {
+      all: branches.all,
+      current: branches.current
     }
   })
 

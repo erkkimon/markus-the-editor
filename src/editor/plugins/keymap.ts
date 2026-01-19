@@ -24,7 +24,7 @@ function toggleHeading(level: number): Command {
 
 // Custom save command that will be handled by the editor
 function saveCommand(onSave?: () => void): Command {
-  return (_state, _dispatch) => {
+  return () => {
     if (onSave) {
       onSave()
       return true
