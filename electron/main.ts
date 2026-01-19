@@ -287,6 +287,16 @@ ipcMain.handle('file:openPath', async (_, filePath: string) => {
 app.whenReady().then(() => {
   createWindow()
 
+  // Handle file opened from command line on Linux (file manager, terminal, etc.)
+  // On macOS, this is handled by the 'open-file' event instead
+  const initialFilePath = getFilePathFromArgs(process.argv)
+  if (initialFilePath && mainWindow) {
+    // Wait for window to be ready to receive IPC messages before opening file
+    mainWindow.once('ready-to-show', () => {
+      openFile(initialFilePath)
+    })
+  }
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow()
@@ -301,7 +311,17 @@ app.on('window-all-closed', () => {
   }
 })
 
-// Handle file opened via command line or file association
+/**
+ * Extract markdown file path from command line arguments.
+ * Used for both initial launch and second-instance handling on Linux.
+ */
+function getFilePathFromArgs(args: string[]): string | undefined {
+  return args.find(arg =>
+    (arg.endsWith('.md') || arg.endsWith('.markdown')) && existsSync(arg)
+  )
+}
+
+// Handle file opened via file association on macOS (uses open-file event)
 app.on('open-file', async (event, filePath) => {
   event.preventDefault()
   if (mainWindow) {
@@ -316,16 +336,14 @@ const gotTheLock = app.requestSingleInstanceLock()
 if (!gotTheLock) {
   app.quit()
 } else {
+  // Handle file opened when app is already running (Linux second instance)
   app.on('second-instance', (_, commandLine) => {
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore()
       mainWindow.focus()
 
-      // Check for file path in command line arguments
-      const filePath = commandLine.find(arg =>
-        arg.endsWith('.md') || arg.endsWith('.markdown')
-      )
-      if (filePath && existsSync(filePath)) {
+      const filePath = getFilePathFromArgs(commandLine)
+      if (filePath) {
         openFile(filePath)
       }
     }
