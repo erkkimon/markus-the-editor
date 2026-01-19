@@ -89,6 +89,7 @@
       "dist/**/*",
       "dist-electron/**/*"
     ],
+    "icon": "resources/icons/icon.png",
     "linux": {
       "target": [
         "AppImage",
@@ -96,6 +97,7 @@
         "pacman"
       ],
       "category": "Utility",
+      "icon": "resources/icons",
       "mimeTypes": [
         "text/markdown",
         "text/x-markdown"
@@ -108,10 +110,12 @@
     },
     "mac": {
       "target": "dmg",
-      "category": "public.app-category.productivity"
+      "category": "public.app-category.productivity",
+      "icon": "resources/icons/icon.png"
     },
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "resources/icons/icon.ico"
     }
   }
 }
