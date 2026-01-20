@@ -43,3 +43,38 @@ These controls appear only when the cursor is inside a table.
 - The `tableControls` plugin (`src/editor/plugins/tableControls.ts`) tracks cursor position in tables
 - The `TableControls` component (`src/components/TableControls.tsx`) renders the floating buttons
 - Table operations are in `src/editor/tableUtils.ts`
+
+## Collapsible Sections
+
+Content can be collapsed to hide portions of the document while keeping the structure visible.
+
+### Headings
+
+Headings can be collapsed to hide all content until the next heading of the same or higher level:
+
+- **H1** collapses everything until the next H1
+- **H2** collapses everything until the next H1 or H2
+- And so on for H3-H6
+
+A collapse indicator (▼/▶) appears in the left margin when hovering over a heading. Click the indicator to toggle collapse state.
+
+### List Items
+
+List items that contain nested content (sub-lists or other blocks) can be collapsed:
+
+- **Bullet points** with sub-bullets show a collapse indicator
+- **Numbered lists** with nested content show a collapse indicator
+
+Click the indicator to collapse/expand the nested content. Only the first paragraph of the list item remains visible when collapsed.
+
+### Visual Feedback
+
+- Expanded: ▼ indicator
+- Collapsed: ▶ indicator (highlighted)
+- Collapsed items show a left border accent to indicate hidden content
+
+### Implementation Details
+
+- The `collapse` plugin (`src/editor/plugins/collapse.ts`) manages collapse state and decorations
+- Collapse state is tracked per-session (not persisted to the document)
+- Uses ProseMirror decorations to add indicators and hide content

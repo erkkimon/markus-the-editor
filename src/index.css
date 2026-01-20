@@ -272,3 +272,77 @@
 .table-delete-btn:hover {
   @apply border-destructive;
 }
+
+/* Collapse indicators - clickable arrows for collapsible sections */
+.collapse-indicator {
+  @apply inline-flex items-center justify-center cursor-pointer select-none;
+  @apply text-muted-foreground hover:text-foreground transition-colors;
+  width: 1em;
+  font-size: 0.7em;
+  margin-right: 0.3em;
+}
+
+.collapse-indicator:hover {
+  @apply text-primary;
+}
+
+/* Heading collapse indicator - positioned in the margin */
+.collapse-indicator-heading {
+  @apply absolute;
+  left: -1.5em;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+/* Show heading indicator on hover over the heading or when collapsed */
+.collapsible-heading {
+  @apply relative;
+}
+
+.collapsible-heading:hover .collapse-indicator-heading,
+.collapsible-heading.is-collapsed .collapse-indicator-heading,
+.collapse-indicator-heading:hover {
+  opacity: 1;
+}
+
+/* Always show indicator when section is collapsed */
+.collapsible-heading.is-collapsed .collapse-indicator-heading {
+  opacity: 1;
+  @apply text-primary;
+}
+
+/* List item collapse indicator */
+.collapse-indicator-list {
+  @apply absolute;
+  left: -1.2em;
+  top: 0.15em;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+/* Show list indicator on hover or when collapsed */
+.collapsible-list-item {
+  @apply relative;
+}
+
+.collapsible-list-item:hover > .collapse-indicator-list,
+.collapsible-list-item.is-collapsed > .collapse-indicator-list,
+.collapse-indicator-list:hover {
+  opacity: 1;
+}
+
+.collapsible-list-item.is-collapsed > .collapse-indicator-list {
+  opacity: 1;
+  @apply text-primary;
+}
+
+/* Visual indicator that content is collapsed */
+.collapsible-heading.is-collapsed,
+.collapsible-list-item.is-collapsed {
+  @apply border-l-2 border-primary/30 pl-2 -ml-2;
+}
+
+/* Hidden collapsed content */
+.collapsed-content {
+  display: none !important;
+}

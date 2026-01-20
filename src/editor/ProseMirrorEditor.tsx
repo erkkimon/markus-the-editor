@@ -19,6 +19,7 @@ import { createSlashMenuPlugin, SlashMenuState, slashMenuPluginKey } from './plu
 import { createPlaceholderPlugin } from './plugins/placeholder'
 import { createDeletionConfirmPlugin } from './plugins/deletionConfirm'
 import { createTableControlsPlugin, TableControlsState } from './plugins/tableControls'
+import { createCollapsePlugin } from './plugins/collapse'
 import { SlashMenu } from '../components/SlashMenu'
 import { Toast } from '../components/Toast'
 import { TableControls } from '../components/TableControls'
@@ -121,7 +122,9 @@ export const ProseMirrorEditor = forwardRef<ProseMirrorEditorHandle, ProseMirror
         columnResizing(),
         tableEditing(),
         // Table controls plugin tracks cursor position in tables for UI controls
-        createTableControlsPlugin(setTableControlsState)
+        createTableControlsPlugin(setTableControlsState),
+        // Collapse plugin for collapsible headings and list items
+        createCollapsePlugin()
       ]
 
       const state = EditorState.create({
