@@ -21,12 +21,14 @@ import { createDeletionConfirmPlugin } from './plugins/deletionConfirm'
 import { createTableControlsPlugin, TableControlsState } from './plugins/tableControls'
 import { createCollapsePlugin } from './plugins/collapse'
 import { createImagePlugin, ImageHoverState, PendingImage, insertImage } from './plugins/imagePlugin'
+import { createCommentPlugin, CommentState } from './plugins/commentPlugin'
 import { SlashMenu } from '../components/SlashMenu'
 import { Toast } from '../components/Toast'
 import { TableControls } from '../components/TableControls'
 import { ImageFilenameDialog } from '../components/ImageFilenameDialog'
 import { ImageEditPopover } from '../components/ImageEditPopover'
 import { ImageLightbox } from '../components/ImageLightbox'
+import { CommentPopover } from '../components/CommentPopover'
 
 export interface ProseMirrorEditorHandle {
   getContent: () => string
@@ -83,6 +85,16 @@ export const ProseMirrorEditor = forwardRef<ProseMirrorEditorHandle, ProseMirror
     const [dropIndicator, setDropIndicator] = useState<{ top: number; left: number; width: number } | null>(null)
     // Track insert position for pending image
     const pendingImagePosRef = useRef<number>(0)
+
+    // Comment state
+    const [commentState, setCommentState] = useState<CommentState>({
+      active: false,
+      commentText: '',
+      from: 0,
+      to: 0,
+      hasSelection: false,
+      rect: null
+    })
 
     const getContent = useCallback(() => {
       if (!viewRef.current) return ''
@@ -176,7 +188,9 @@ export const ProseMirrorEditor = forwardRef<ProseMirrorEditorHandle, ProseMirror
         // Collapse plugin for collapsible headings and list items
         createCollapsePlugin(),
         // Image plugin handles drag/drop, paste, and hover detection
-        createImagePlugin(handleImageDrop, setImageHoverState, getImageContext, setDropIndicator)
+        createImagePlugin(handleImageDrop, setImageHoverState, getImageContext, setDropIndicator),
+        // Comment plugin for tracking and editing comments
+        createCommentPlugin(setCommentState)
       ]
 
       const state = EditorState.create({
@@ -300,6 +314,11 @@ export const ProseMirrorEditor = forwardRef<ProseMirrorEditorHandle, ProseMirror
         <ImageLightbox
           src={lightboxSrc}
           onClose={handleLightboxClose}
+        />
+        <CommentPopover
+          state={commentState}
+          view={viewRef.current}
+          containerRef={containerRef as React.RefObject<HTMLDivElement>}
         />
         <Toast />
       </div>

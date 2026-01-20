@@ -514,3 +514,84 @@
 .invalid-markdown-content p:last-child {
   @apply mb-0;
 }
+
+/* ==============================
+   Comment Styles
+   ============================== */
+
+/* Commented text highlight - yellow background like Google Docs */
+.ProseMirror .commented-text {
+  background-color: hsl(48 96% 89%);
+  border-bottom: 2px solid hsl(48 96% 53%);
+  cursor: pointer;
+}
+
+.dark .ProseMirror .commented-text {
+  background-color: hsl(48 60% 25%);
+  border-bottom-color: hsl(48 80% 45%);
+}
+
+/* Comment popover container */
+.comment-popover {
+  @apply bg-popover border border-border rounded-lg shadow-xl;
+  min-width: 220px;
+  max-width: 320px;
+}
+
+/* Add comment button (appears on selection) */
+.comment-add-btn {
+  @apply flex items-center gap-2 px-3 py-2 text-sm font-medium;
+  @apply text-muted-foreground hover:text-foreground hover:bg-accent;
+  @apply w-full rounded-lg transition-colors;
+}
+
+/* Comment view (existing comment display) */
+.comment-view {
+  @apply p-3;
+}
+
+.comment-text {
+  @apply text-sm text-foreground mb-3 whitespace-pre-wrap;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* Comment edit form */
+.comment-edit-form {
+  @apply p-3;
+}
+
+.comment-textarea {
+  @apply w-full px-2 py-1.5 text-sm rounded border border-border;
+  @apply bg-background text-foreground resize-none;
+  @apply focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary;
+}
+
+.comment-hint {
+  @apply text-xs text-muted-foreground mt-1;
+}
+
+/* Comment action buttons */
+.comment-actions {
+  @apply flex gap-2 mt-2;
+}
+
+.comment-btn {
+  @apply flex items-center gap-1 px-2 py-1 text-xs font-medium rounded;
+  @apply border border-border text-muted-foreground;
+  @apply hover:bg-accent hover:text-foreground transition-colors;
+}
+
+.comment-btn:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+.comment-btn-primary {
+  @apply bg-primary text-primary-foreground border-primary;
+  @apply hover:bg-primary/90 hover:text-primary-foreground;
+}
+
+.comment-btn-danger {
+  @apply text-destructive border-destructive/30;
+  @apply hover:bg-destructive/10 hover:text-destructive;
+}

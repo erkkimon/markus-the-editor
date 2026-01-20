@@ -510,6 +510,177 @@ More text after image.`
   })
 })
 
+describe('Comment Parser', () => {
+  it('should parse comments from HTML comment syntax', () => {
+    const markdown = 'Some text <!-- COMMENT: "This is a comment" -->highlighted<!-- /COMMENT --> more text'
+    const doc = markdownParser.parse(markdown)
+    expect(doc).toBeDefined()
+
+    // Find the text with comment mark
+    let foundComment = false
+    doc?.descendants((node) => {
+      if (node.isText && node.marks.some(m => m.type.name === 'comment')) {
+        foundComment = true
+        const commentMark = node.marks.find(m => m.type.name === 'comment')
+        expect(commentMark?.attrs.text).toBe('This is a comment')
+        expect(node.text).toBe('highlighted')
+      }
+      return true
+    })
+    expect(foundComment).toBe(true)
+  })
+
+  it('should parse comments with escaped quotes', () => {
+    const markdown = '<!-- COMMENT: "He said \\"hello\\"" -->text<!-- /COMMENT -->'
+    const doc = markdownParser.parse(markdown)
+    expect(doc).toBeDefined()
+
+    let foundComment = false
+    doc?.descendants((node) => {
+      if (node.isText && node.marks.some(m => m.type.name === 'comment')) {
+        foundComment = true
+        const commentMark = node.marks.find(m => m.type.name === 'comment')
+        expect(commentMark?.attrs.text).toBe('He said "hello"')
+      }
+      return true
+    })
+    expect(foundComment).toBe(true)
+  })
+
+  it('should parse comments with newlines', () => {
+    const markdown = '<!-- COMMENT: "Line 1\\nLine 2" -->text<!-- /COMMENT -->'
+    const doc = markdownParser.parse(markdown)
+    expect(doc).toBeDefined()
+
+    let foundComment = false
+    doc?.descendants((node) => {
+      if (node.isText && node.marks.some(m => m.type.name === 'comment')) {
+        foundComment = true
+        const commentMark = node.marks.find(m => m.type.name === 'comment')
+        expect(commentMark?.attrs.text).toBe('Line 1\nLine 2')
+      }
+      return true
+    })
+    expect(foundComment).toBe(true)
+  })
+
+  it('should parse multiple comments in same paragraph', () => {
+    const markdown = '<!-- COMMENT: "First" -->text1<!-- /COMMENT --> middle <!-- COMMENT: "Second" -->text2<!-- /COMMENT -->'
+    const doc = markdownParser.parse(markdown)
+    expect(doc).toBeDefined()
+
+    const comments: { text: string; content: string }[] = []
+    doc?.descendants((node) => {
+      if (node.isText && node.marks.some(m => m.type.name === 'comment')) {
+        const commentMark = node.marks.find(m => m.type.name === 'comment')
+        comments.push({
+          text: commentMark?.attrs.text || '',
+          content: node.text || ''
+        })
+      }
+      return true
+    })
+
+    expect(comments.length).toBe(2)
+    expect(comments[0].text).toBe('First')
+    expect(comments[0].content).toBe('text1')
+    expect(comments[1].text).toBe('Second')
+    expect(comments[1].content).toBe('text2')
+  })
+})
+
+describe('Comment Serializer', () => {
+  it('should serialize comments to HTML comment syntax', () => {
+    const doc = schema.nodes.doc.create(null, [
+      schema.nodes.paragraph.create(null, [
+        schema.text('highlighted', [schema.marks.comment.create({ text: 'My comment' })])
+      ])
+    ])
+    const markdown = markdownSerializer.serialize(doc)
+    expect(markdown).toContain('<!-- COMMENT: "My comment" -->')
+    expect(markdown).toContain('highlighted')
+    expect(markdown).toContain('<!-- /COMMENT -->')
+  })
+
+  it('should escape quotes in comment text', () => {
+    const doc = schema.nodes.doc.create(null, [
+      schema.nodes.paragraph.create(null, [
+        schema.text('text', [schema.marks.comment.create({ text: 'He said "hello"' })])
+      ])
+    ])
+    const markdown = markdownSerializer.serialize(doc)
+    expect(markdown).toContain('<!-- COMMENT: "He said \\"hello\\"" -->')
+  })
+
+  it('should escape newlines in comment text', () => {
+    const doc = schema.nodes.doc.create(null, [
+      schema.nodes.paragraph.create(null, [
+        schema.text('text', [schema.marks.comment.create({ text: 'Line 1\nLine 2' })])
+      ])
+    ])
+    const markdown = markdownSerializer.serialize(doc)
+    expect(markdown).toContain('<!-- COMMENT: "Line 1\\nLine 2" -->')
+  })
+
+  it('should handle text with comment and other marks', () => {
+    const doc = schema.nodes.doc.create(null, [
+      schema.nodes.paragraph.create(null, [
+        schema.text('bold text', [
+          schema.marks.strong.create(),
+          schema.marks.comment.create({ text: 'A comment' })
+        ])
+      ])
+    ])
+    const markdown = markdownSerializer.serialize(doc)
+    // Should have both comment syntax and bold marks
+    expect(markdown).toContain('<!-- COMMENT:')
+    expect(markdown).toContain('**')
+    expect(markdown).toContain('<!-- /COMMENT -->')
+  })
+})
+
+describe('Comment Round-trip Tests', () => {
+  it('should preserve simple comment through round-trip', () => {
+    const original = '<!-- COMMENT: "Test comment" -->highlighted text<!-- /COMMENT -->'
+    const doc = markdownParser.parse(original)
+    const serialized = markdownSerializer.serialize(doc!)
+
+    expect(serialized).toContain('<!-- COMMENT: "Test comment" -->')
+    expect(serialized).toContain('highlighted text')
+    expect(serialized).toContain('<!-- /COMMENT -->')
+  })
+
+  it('should preserve comment with special characters through round-trip', () => {
+    const original = '<!-- COMMENT: "Quote: \\"test\\"\\nNew line" -->text<!-- /COMMENT -->'
+    const doc = markdownParser.parse(original)
+    const serialized = markdownSerializer.serialize(doc!)
+
+    // The comment content should be preserved
+    expect(serialized).toContain('COMMENT: "Quote: \\"test\\"\\nNew line"')
+    expect(serialized).toContain('text')
+  })
+
+  it('should preserve comment in mixed content through round-trip', () => {
+    const original = `# Title
+
+Some regular text.
+
+Here is <!-- COMMENT: "important note" -->annotated text<!-- /COMMENT --> in a paragraph.
+
+More content.`
+
+    const doc = markdownParser.parse(original)
+    const serialized = markdownSerializer.serialize(doc!)
+
+    expect(serialized).toContain('# Title')
+    expect(serialized).toContain('Some regular text.')
+    expect(serialized).toContain('<!-- COMMENT: "important note" -->')
+    expect(serialized).toContain('annotated text')
+    expect(serialized).toContain('<!-- /COMMENT -->')
+    expect(serialized).toContain('More content.')
+  })
+})
+
 describe('Table Round-trip Tests', () => {
   it('should preserve table structure through parse/serialize cycle', () => {
     const original = `| Name | Age |

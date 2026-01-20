@@ -13,6 +13,72 @@ import { Mark, Node } from 'prosemirror-model'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const md = new (MarkdownIt as any)({ html: true })
 
+/**
+ * Escape a string for use in a quoted context (like JSON string).
+ * Handles newlines, quotes, and backslashes.
+ */
+function escapeCommentText(text: string): string {
+  return text
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\t/g, '\\t')
+}
+
+/**
+ * Unescape a string that was escaped with escapeCommentText.
+ */
+function unescapeCommentText(text: string): string {
+  let result = ''
+  let i = 0
+  while (i < text.length) {
+    if (text[i] === '\\' && i + 1 < text.length) {
+      const next = text[i + 1]
+      switch (next) {
+        case '\\': result += '\\'; i += 2; break
+        case '"': result += '"'; i += 2; break
+        case 'n': result += '\n'; i += 2; break
+        case 'r': result += '\r'; i += 2; break
+        case 't': result += '\t'; i += 2; break
+        default: result += text[i]; i++; break
+      }
+    } else {
+      result += text[i]
+      i++
+    }
+  }
+  return result
+}
+
+// Unique markers for comment boundaries that won't appear in normal text
+const COMMENT_START_MARKER = '\u0001CMTS\u0001'
+const COMMENT_END_MARKER = '\u0001CMTE\u0001'
+
+/**
+ * Pre-process markdown to extract HTML comment syntax for comments.
+ * Format: <!-- COMMENT: "escaped text" -->highlighted text<!-- /COMMENT -->
+ * Replaces with unique markers that survive markdown parsing.
+ * Returns the processed content and a map of marker indices to comment text.
+ */
+function preprocessComments(content: string): { content: string; commentTexts: Map<number, string> } {
+  const commentTexts = new Map<number, string>()
+  let commentIndex = 0
+
+  // Match: <!-- COMMENT: "..." -->text<!-- /COMMENT -->
+  const commentRegex = /<!-- COMMENT: "((?:[^"\\]|\\.)*)" -->([\s\S]*?)<!-- \/COMMENT -->/g
+
+  const processedContent = content.replace(commentRegex, (_, escapedText, highlightedText) => {
+    const commentText = unescapeCommentText(escapedText)
+    const idx = commentIndex++
+    commentTexts.set(idx, commentText)
+    // Insert markers around the highlighted text
+    return `${COMMENT_START_MARKER}${idx}${COMMENT_START_MARKER}${highlightedText}${COMMENT_END_MARKER}${idx}${COMMENT_END_MARKER}`
+  })
+
+  return { content: processedContent, commentTexts }
+}
+
 // Base parser without table support - we'll wrap it to add table handling
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const baseMarkdownParser = new MarkdownParser(schema, md as any, {
@@ -215,15 +281,101 @@ function applyImageAttributes(doc: Node, imgAttrs: Map<string, { align?: string;
 }
 
 /**
- * Custom markdown parser that handles tables and HTML img tags specially.
+ * Apply comment marks to a parsed document based on markers.
+ * Finds marker patterns in text nodes and converts them to comment marks.
+ */
+function applyCommentMarks(doc: Node, commentTexts: Map<number, string>): Node {
+  if (commentTexts.size === 0) return doc
+
+  const commentMark = schema.marks.comment
+
+  // Pattern to find markers in text
+  // Format: \u0001CMTS\u0001{index}\u0001CMTS\u0001...text...\u0001CMTE\u0001{index}\u0001CMTE\u0001
+  const markerPattern = new RegExp(
+    `${escapeRegex(COMMENT_START_MARKER)}(\\d+)${escapeRegex(COMMENT_START_MARKER)}([\\s\\S]*?)${escapeRegex(COMMENT_END_MARKER)}\\1${escapeRegex(COMMENT_END_MARKER)}`,
+    'g'
+  )
+
+  function escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  }
+
+  // Transform a node, processing any text children for markers
+  function transformNode(node: Node): Node[] {
+    if (node.isText && node.text) {
+      const text = node.text
+
+      // Check if this text contains any markers
+      if (!text.includes(COMMENT_START_MARKER)) {
+        return [node]
+      }
+
+      // Find and replace markers with marked text
+      const result: Node[] = []
+      let lastIndex = 0
+      let match: RegExpExecArray | null
+
+      markerPattern.lastIndex = 0
+      while ((match = markerPattern.exec(text)) !== null) {
+        const [fullMatch, indexStr, highlightedText] = match
+        const idx = parseInt(indexStr, 10)
+        const commentText = commentTexts.get(idx) || ''
+
+        // Add text before this marker
+        if (match.index > lastIndex) {
+          const beforeText = text.slice(lastIndex, match.index)
+          if (beforeText) {
+            result.push(schema.text(beforeText, node.marks))
+          }
+        }
+
+        // Add the commented text with mark
+        if (highlightedText) {
+          const commentedMarks = commentMark.create({ text: commentText }).addToSet(node.marks)
+          result.push(schema.text(highlightedText, commentedMarks))
+        }
+
+        lastIndex = match.index + fullMatch.length
+      }
+
+      // Add remaining text after last marker
+      if (lastIndex < text.length) {
+        result.push(schema.text(text.slice(lastIndex), node.marks))
+      }
+
+      return result.length > 0 ? result : [node]
+    }
+
+    if (node.isLeaf) return [node]
+
+    // Transform children
+    const children: Node[] = []
+    node.forEach((child) => {
+      const transformedChildren = transformNode(child)
+      children.push(...transformedChildren)
+    })
+
+    return [node.type.create(node.attrs, children, node.marks)]
+  }
+
+  const result = transformNode(doc)
+  return result[0]
+}
+
+/**
+ * Custom markdown parser that handles tables, HTML img tags, and comments specially.
  * Tables require custom handling because prosemirror-markdown's standard
  * block handlers don't properly wrap inline cell content in paragraphs.
  * HTML img tags are handled to support align/width attributes.
+ * Comments use HTML comment syntax: <!-- COMMENT: "text" -->highlighted<!-- /COMMENT -->
  */
 export const markdownParser = {
   parse(content: string): Node | null {
+    // Pre-process to extract HTML comments for annotations
+    const { content: commentProcessed, commentTexts } = preprocessComments(content)
+
     // Pre-process to extract HTML img tags and their attributes
-    const { content: processedContent, imgAttrs } = preprocessHtmlImages(content)
+    const { content: processedContent, imgAttrs } = preprocessHtmlImages(commentProcessed)
 
     // Parse with the processed content
     const tokens = md.parse(processedContent, {})
@@ -242,8 +394,11 @@ export const markdownParser = {
 
     // If no tables, use standard parser
     if (tableRanges.length === 0) {
-      const doc = baseMarkdownParser.parse(processedContent)
-      return doc ? applyImageAttributes(doc, imgAttrs) : null
+      let doc = baseMarkdownParser.parse(processedContent)
+      if (!doc) return null
+      doc = applyImageAttributes(doc, imgAttrs)
+      doc = applyCommentMarks(doc, commentTexts)
+      return doc
     }
 
     // Build document with tables
@@ -292,8 +447,10 @@ export const markdownParser = {
       return schema.nodes.doc.create(null, schema.nodes.paragraph.create())
     }
 
-    const doc = schema.nodes.doc.create(null, children)
-    return applyImageAttributes(doc, imgAttrs)
+    let doc = schema.nodes.doc.create(null, children)
+    doc = applyImageAttributes(doc, imgAttrs)
+    doc = applyCommentMarks(doc, commentTexts)
+    return doc
   }
 }
 
@@ -449,6 +606,18 @@ export const markdownSerializer = new MarkdownSerializer({
     close: '~~',
     mixable: true,
     expelEnclosingWhitespace: true
+  },
+  comment: {
+    open(_state, mark: Mark) {
+      // Output HTML comment with escaped comment text
+      const escapedText = escapeCommentText(mark.attrs.text || '')
+      return `<!-- COMMENT: "${escapedText}" -->`
+    },
+    close() {
+      return '<!-- /COMMENT -->'
+    },
+    mixable: false, // Comments don't mix well with other marks in markdown
+    expelEnclosingWhitespace: false
   }
 })
 

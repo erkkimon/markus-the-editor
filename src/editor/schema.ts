@@ -260,6 +260,23 @@ const marks: Record<string, MarkSpec> = {
     toDOM() {
       return ['s', 0]
     }
+  },
+
+  comment: {
+    attrs: {
+      text: { default: '' }
+    },
+    inclusive: false, // Don't extend mark when typing at edges
+    parseDOM: [{
+      tag: 'span[data-comment]',
+      getAttrs(node) {
+        const element = node as HTMLElement
+        return { text: element.getAttribute('data-comment') || '' }
+      }
+    }],
+    toDOM(node) {
+      return ['span', { class: 'commented-text', 'data-comment': node.attrs.text }, 0]
+    }
   }
 }
 
