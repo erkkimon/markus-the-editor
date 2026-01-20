@@ -59,6 +59,52 @@ describe('ProseMirror Schema', () => {
     it('should have text node', () => {
       expect(schema.nodes.text).toBeDefined()
     })
+
+    it('should have table node', () => {
+      expect(schema.nodes.table).toBeDefined()
+    })
+
+    it('should have table_row node', () => {
+      expect(schema.nodes.table_row).toBeDefined()
+    })
+
+    it('should have table_cell node', () => {
+      expect(schema.nodes.table_cell).toBeDefined()
+    })
+
+    it('should have table_header node', () => {
+      expect(schema.nodes.table_header).toBeDefined()
+    })
+
+    it('should create valid table structure', () => {
+      // Create a simple 2x2 table with header row
+      const headerCell1 = schema.nodes.table_header.create(
+        null,
+        schema.nodes.paragraph.create(null, schema.text('Header 1'))
+      )
+      const headerCell2 = schema.nodes.table_header.create(
+        null,
+        schema.nodes.paragraph.create(null, schema.text('Header 2'))
+      )
+      const headerRow = schema.nodes.table_row.create(null, [headerCell1, headerCell2])
+
+      const dataCell1 = schema.nodes.table_cell.create(
+        null,
+        schema.nodes.paragraph.create(null, schema.text('Data 1'))
+      )
+      const dataCell2 = schema.nodes.table_cell.create(
+        null,
+        schema.nodes.paragraph.create(null, schema.text('Data 2'))
+      )
+      const dataRow = schema.nodes.table_row.create(null, [dataCell1, dataCell2])
+
+      const table = schema.nodes.table.create(null, [headerRow, dataRow])
+
+      expect(table.type.name).toBe('table')
+      expect(table.childCount).toBe(2)
+      expect(table.firstChild?.type.name).toBe('table_row')
+      expect(table.firstChild?.firstChild?.type.name).toBe('table_header')
+    })
   })
 
   describe('Marks', () => {

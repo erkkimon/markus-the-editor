@@ -1,9 +1,15 @@
+/**
+ * Keymap plugin for the editor.
+ * Defines keyboard shortcuts for common editing operations including formatting,
+ * block type changes, list operations, and table navigation.
+ */
 import { keymap } from 'prosemirror-keymap'
 import { baseKeymap, toggleMark, setBlockType, wrapIn, chainCommands, liftEmptyBlock, splitBlock } from 'prosemirror-commands'
 import { undo, redo } from 'prosemirror-history'
 import { schema } from '../schema'
 import { EditorState, Transaction } from 'prosemirror-state'
 import { splitListItem, liftListItem, sinkListItem } from 'prosemirror-schema-list'
+import { goToNextCell } from 'prosemirror-tables'
 
 type Command = (state: EditorState, dispatch?: (tr: Transaction) => void) => boolean
 
@@ -89,8 +95,9 @@ export function buildKeymap(onSave?: () => void) {
     liftEmptyBlock,
     splitBlock
   )
-  keys['Tab'] = sinkListItem(schema.nodes.list_item)
-  keys['Shift-Tab'] = liftListItem(schema.nodes.list_item)
+  // Tab/Shift-Tab: try table navigation first, then list indentation
+  keys['Tab'] = chainCommands(goToNextCell(1), sinkListItem(schema.nodes.list_item))
+  keys['Shift-Tab'] = chainCommands(goToNextCell(-1), liftListItem(schema.nodes.list_item))
 
   // Backspace converts empty non-paragraph blocks to paragraph first
   keys['Backspace'] = chainCommands(

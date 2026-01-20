@@ -1,9 +1,16 @@
+/**
+ * Main ProseMirror editor component.
+ * Wraps the ProseMirror editor view in a React component, handling initialization,
+ * state management, and integration with the rest of the application.
+ * Supports markdown parsing/serialization, slash commands, and table editing.
+ */
 import { useEffect, useRef, useCallback, useState, forwardRef, useImperativeHandle } from 'react'
 import { EditorState, Transaction } from 'prosemirror-state'
 import { EditorView } from 'prosemirror-view'
 import { history } from 'prosemirror-history'
 import { dropCursor } from 'prosemirror-dropcursor'
 import { gapCursor } from 'prosemirror-gapcursor'
+import { tableEditing, columnResizing } from 'prosemirror-tables'
 import { schema } from './schema'
 import { markdownParser, markdownSerializer } from './markdown'
 import { buildInputRules } from './plugins/inputRules'
@@ -90,7 +97,10 @@ export const ProseMirrorEditor = forwardRef<ProseMirrorEditorHandle, ProseMirror
         history(),
         dropCursor(),
         gapCursor(),
-        createPlaceholderPlugin()
+        createPlaceholderPlugin(),
+        // Table editing plugins - provide cell navigation, selection, and editing
+        columnResizing(),
+        tableEditing()
       ]
 
       const state = EditorState.create({

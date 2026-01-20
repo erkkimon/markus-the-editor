@@ -1,0 +1,50 @@
+/**
+ * Utility functions for table operations in the editor.
+ * Provides helper functions to create and manipulate tables using prosemirror-tables.
+ */
+import { EditorView } from 'prosemirror-view'
+import { schema } from './schema'
+
+/**
+ * Create and insert a table at the current cursor position.
+ * Creates a table with the specified dimensions (default 2x2) with a header row.
+ */
+export function createTable(view: EditorView, rows = 2, cols = 2): boolean {
+  const { state, dispatch } = view
+  const { tr } = state
+
+  // Create header cells for the first row
+  const headerCells = []
+  for (let i = 0; i < cols; i++) {
+    headerCells.push(
+      schema.nodes.table_header.create(
+        null,
+        schema.nodes.paragraph.create()
+      )
+    )
+  }
+  const headerRow = schema.nodes.table_row.create(null, headerCells)
+
+  // Create body rows with regular cells
+  const bodyRows = []
+  for (let r = 1; r < rows; r++) {
+    const cells = []
+    for (let c = 0; c < cols; c++) {
+      cells.push(
+        schema.nodes.table_cell.create(
+          null,
+          schema.nodes.paragraph.create()
+        )
+      )
+    }
+    bodyRows.push(schema.nodes.table_row.create(null, cells))
+  }
+
+  // Create the table node
+  const table = schema.nodes.table.create(null, [headerRow, ...bodyRows])
+
+  // Insert the table at the current position
+  dispatch(tr.replaceSelectionWith(table).scrollIntoView())
+
+  return true
+}

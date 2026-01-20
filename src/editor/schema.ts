@@ -1,4 +1,19 @@
+/**
+ * ProseMirror schema definition for the editor.
+ * Defines all node types (blocks, inline elements) and marks (text formatting)
+ * that can exist in the document. This is the foundation of the editor's
+ * document model.
+ */
 import { Schema, NodeSpec, MarkSpec } from 'prosemirror-model'
+import { tableNodes } from 'prosemirror-tables'
+
+// Get table node specs from prosemirror-tables
+// These provide robust table editing with cell navigation and selection
+const tableNodeSpecs = tableNodes({
+  tableGroup: 'block',
+  cellContent: 'block+',
+  cellAttributes: {}
+})
 
 const nodes: Record<string, NodeSpec> = {
   doc: {
@@ -145,7 +160,11 @@ const nodes: Record<string, NodeSpec> = {
 
   text: {
     group: 'inline'
-  }
+  },
+
+  // Table nodes from prosemirror-tables
+  // Spread the specs directly to include table, table_row, table_cell, table_header
+  ...tableNodeSpecs
 }
 
 const marks: Record<string, MarkSpec> = {

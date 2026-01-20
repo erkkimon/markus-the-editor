@@ -62,6 +62,88 @@ describe('Markdown Parser', () => {
     expect(quote?.type.name).toBe('blockquote')
   })
 
+  it('should parse tables', () => {
+    const markdown = `| Header 1 | Header 2 |
+| --- | --- |
+| Cell 1 | Cell 2 |`
+    const doc = markdownParser.parse(markdown)
+    expect(doc).toBeDefined()
+    const table = doc?.firstChild
+    expect(table?.type.name).toBe('table')
+
+    // Table should have rows (2 rows: header + data)
+    expect(table?.childCount).toBe(2)
+
+    // Check first row
+    const firstRow = table?.firstChild
+    expect(firstRow?.type.name).toBe('table_row')
+
+    // Get header row's first cell
+    expect(firstRow?.childCount).toBeGreaterThan(0)
+    const firstCell = firstRow?.firstChild
+    expect(firstCell?.type.name).toBe('table_header')
+  })
+
+  it('should parse tables with multiple rows', () => {
+    const markdown = `| A | B | C |
+| --- | --- | --- |
+| 1 | 2 | 3 |
+| 4 | 5 | 6 |
+| 7 | 8 | 9 |`
+    const doc = markdownParser.parse(markdown)
+    expect(doc).toBeDefined()
+    const table = doc?.firstChild
+    expect(table?.type.name).toBe('table')
+    // 4 rows: 1 header + 3 data rows
+    expect(table?.childCount).toBe(4)
+
+    // Verify each row has 3 cells
+    table?.forEach((row) => {
+      expect(row.childCount).toBe(3)
+    })
+  })
+
+  it('should parse table cell content correctly', () => {
+    const markdown = `| Name | Value |
+| --- | --- |
+| foo | 123 |`
+    const doc = markdownParser.parse(markdown)
+    const table = doc?.firstChild
+
+    // Get the data row (second row)
+    const dataRow = table?.child(1)
+    expect(dataRow?.type.name).toBe('table_row')
+
+    // First cell should contain "foo"
+    const firstCell = dataRow?.firstChild
+    expect(firstCell?.textContent).toBe('foo')
+
+    // Second cell should contain "123"
+    const secondCell = dataRow?.child(1)
+    expect(secondCell?.textContent).toBe('123')
+  })
+
+  it('should parse table mixed with other content', () => {
+    const markdown = `# Title
+
+Some paragraph text.
+
+| Col 1 | Col 2 |
+| --- | --- |
+| A | B |
+
+More text after the table.`
+    const doc = markdownParser.parse(markdown)
+    expect(doc).toBeDefined()
+
+    // Should have: heading, paragraph, table, paragraph
+    expect(doc?.childCount).toBe(4)
+    expect(doc?.child(0)?.type.name).toBe('heading')
+    expect(doc?.child(1)?.type.name).toBe('paragraph')
+    expect(doc?.child(2)?.type.name).toBe('table')
+    expect(doc?.child(3)?.type.name).toBe('paragraph')
+  })
+
   it('should parse links', () => {
     const doc = markdownParser.parse('[Link text](https://example.com)')
     expect(doc).toBeDefined()
@@ -153,5 +235,160 @@ describe('Markdown Serializer', () => {
     ])
     const markdown = markdownSerializer.serialize(doc)
     expect(markdown).toContain('> Quote')
+  })
+
+  it('should serialize tables', () => {
+    const doc = schema.nodes.doc.create(null, [
+      schema.nodes.table.create(null, [
+        schema.nodes.table_row.create(null, [
+          schema.nodes.table_header.create(null, [
+            schema.nodes.paragraph.create(null, schema.text('Header 1'))
+          ]),
+          schema.nodes.table_header.create(null, [
+            schema.nodes.paragraph.create(null, schema.text('Header 2'))
+          ])
+        ]),
+        schema.nodes.table_row.create(null, [
+          schema.nodes.table_cell.create(null, [
+            schema.nodes.paragraph.create(null, schema.text('Cell 1'))
+          ]),
+          schema.nodes.table_cell.create(null, [
+            schema.nodes.paragraph.create(null, schema.text('Cell 2'))
+          ])
+        ])
+      ])
+    ])
+    const markdown = markdownSerializer.serialize(doc)
+    expect(markdown).toContain('| Header 1')
+    expect(markdown).toContain('| Header 2')
+    expect(markdown).toContain('| Cell 1')
+    expect(markdown).toContain('| Cell 2')
+    // Should have separator row (with padding)
+    expect(markdown).toContain('| ----')
+  })
+
+  it('should serialize tables with multiple rows', () => {
+    const doc = schema.nodes.doc.create(null, [
+      schema.nodes.table.create(null, [
+        schema.nodes.table_row.create(null, [
+          schema.nodes.table_header.create(null, [
+            schema.nodes.paragraph.create(null, schema.text('A'))
+          ]),
+          schema.nodes.table_header.create(null, [
+            schema.nodes.paragraph.create(null, schema.text('B'))
+          ])
+        ]),
+        schema.nodes.table_row.create(null, [
+          schema.nodes.table_cell.create(null, [
+            schema.nodes.paragraph.create(null, schema.text('1'))
+          ]),
+          schema.nodes.table_cell.create(null, [
+            schema.nodes.paragraph.create(null, schema.text('2'))
+          ])
+        ]),
+        schema.nodes.table_row.create(null, [
+          schema.nodes.table_cell.create(null, [
+            schema.nodes.paragraph.create(null, schema.text('3'))
+          ]),
+          schema.nodes.table_cell.create(null, [
+            schema.nodes.paragraph.create(null, schema.text('4'))
+          ])
+        ])
+      ])
+    ])
+    const markdown = markdownSerializer.serialize(doc)
+
+    // Check structure - should have 3 content rows + 1 separator
+    const lines = markdown.trim().split('\n')
+    expect(lines.length).toBe(4) // header, separator, row1, row2
+
+    // Verify separator line
+    expect(lines[1]).toMatch(/^\|[\s-]+\|[\s-]+\|$/)
+  })
+
+  it('should serialize empty cells', () => {
+    const doc = schema.nodes.doc.create(null, [
+      schema.nodes.table.create(null, [
+        schema.nodes.table_row.create(null, [
+          schema.nodes.table_header.create(null, [
+            schema.nodes.paragraph.create()
+          ]),
+          schema.nodes.table_header.create(null, [
+            schema.nodes.paragraph.create(null, schema.text('Header'))
+          ])
+        ]),
+        schema.nodes.table_row.create(null, [
+          schema.nodes.table_cell.create(null, [
+            schema.nodes.paragraph.create(null, schema.text('Data'))
+          ]),
+          schema.nodes.table_cell.create(null, [
+            schema.nodes.paragraph.create()
+          ])
+        ])
+      ])
+    ])
+    const markdown = markdownSerializer.serialize(doc)
+    // Should still have valid table structure with empty cells
+    expect(markdown).toContain('|')
+    expect(markdown).toContain('Header')
+    expect(markdown).toContain('Data')
+  })
+})
+
+describe('Table Round-trip Tests', () => {
+  it('should preserve table structure through parse/serialize cycle', () => {
+    const original = `| Name | Age |
+| --- | --- |
+| Alice | 30 |
+| Bob | 25 |`
+
+    const doc = markdownParser.parse(original)
+    expect(doc).toBeDefined()
+
+    const serialized = markdownSerializer.serialize(doc!)
+
+    // Re-parse the serialized content
+    const doc2 = markdownParser.parse(serialized)
+    expect(doc2).toBeDefined()
+
+    // Should have same structure
+    expect(doc2?.firstChild?.type.name).toBe('table')
+    expect(doc2?.firstChild?.childCount).toBe(3) // header + 2 data rows
+  })
+
+  it('should preserve cell content through round-trip', () => {
+    const original = `| Column A | Column B |
+| --- | --- |
+| Value 1 | Value 2 |`
+
+    const doc = markdownParser.parse(original)
+    const serialized = markdownSerializer.serialize(doc!)
+    const doc2 = markdownParser.parse(serialized)
+
+    // Check that cell content is preserved
+    const table = doc2?.firstChild
+    const dataRow = table?.child(1)
+
+    expect(dataRow?.firstChild?.textContent).toBe('Value 1')
+    expect(dataRow?.child(1)?.textContent).toBe('Value 2')
+  })
+
+  it('should handle table with surrounding content through round-trip', () => {
+    const original = `# Document Title
+
+| Key | Value |
+| --- | --- |
+| foo | bar |
+
+Some text after.`
+
+    const doc = markdownParser.parse(original)
+    const serialized = markdownSerializer.serialize(doc!)
+    const doc2 = markdownParser.parse(serialized)
+
+    // Verify structure is preserved
+    expect(doc2?.child(0)?.type.name).toBe('heading')
+    expect(doc2?.child(1)?.type.name).toBe('table')
+    expect(doc2?.child(2)?.type.name).toBe('paragraph')
   })
 })

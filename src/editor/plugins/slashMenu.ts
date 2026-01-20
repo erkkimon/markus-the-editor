@@ -1,8 +1,15 @@
+/**
+ * Slash menu plugin for the editor.
+ * Provides a Notion-style slash command menu that appears when the user types '/'
+ * at the beginning of a line or after whitespace. Allows quick insertion of
+ * various block types like headings, lists, code blocks, tables, etc.
+ */
 import { Plugin, PluginKey } from 'prosemirror-state'
 import { EditorView } from 'prosemirror-view'
 import { setBlockType, wrapIn } from 'prosemirror-commands'
 import { schema } from '../schema'
 import { wrapInList } from 'prosemirror-schema-list'
+import { createTable } from '../tableUtils'
 
 export interface SlashMenuItem {
   id: string
@@ -102,6 +109,16 @@ const slashMenuItems: SlashMenuItem[] = [
       const { state, dispatch } = view
       const { tr } = state
       dispatch(tr.replaceSelectionWith(schema.nodes.horizontal_rule.create()).scrollIntoView())
+      view.focus()
+    }
+  },
+  {
+    id: 'table',
+    label: 'Table',
+    description: 'Insert a table',
+    icon: '⊞',
+    action: (view) => {
+      createTable(view)
       view.focus()
     }
   }

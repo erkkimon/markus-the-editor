@@ -33,17 +33,44 @@ table: { ignore: true },
 
 ## Testing and Quality
 
+### Mandatory Testing Policy
+
+**Every implementation must include automated tests.** This is non-negotiable. Tests prevent regressions and ensure features aren't accidentally broken by future changes.
+
+Guidelines for test coverage:
+- **New features**: Add tests that verify the feature works as expected
+- **Bug fixes**: Add a test that reproduces the bug and verifies the fix
+- **Refactoring**: Ensure existing tests still pass; add tests if coverage is lacking
+- **Schema/data changes**: Test parsing, serialization, and round-trip behavior
+- **UI components**: Test key interactions and state changes
+
+Choose the appropriate test type:
+- **Unit tests**: For pure functions, utilities, and isolated logic
+- **Integration tests**: For features involving multiple modules (e.g., markdown parsing + serialization)
+- **Round-trip tests**: For data transformations (parse → modify → serialize → parse again)
+
 ### Automated Tests
 - Tests are located in files with `.test.ts` suffix alongside source files
 - Run tests with: `npm test`
 - Run tests in watch mode: `npm test:watch`
-- **Important**: Add tests for new implementations to prevent regressions
 
-### Code Quality Commands
-Before considering work complete, run:
-- `npm run typecheck` - TypeScript type checking
-- `npm run lint` - ESLint code linting
-- `npm run build` - Full production build
+### Pre-Completion Checklist
+
+**Before pushing code or declaring a task complete, always run:**
+
+```bash
+npm run typecheck  # TypeScript type checking
+npm run lint       # ESLint code linting
+npm test           # Run all automated tests
+npm run build      # Full production build
+```
+
+All four commands must pass without errors. A task is not complete until:
+1. Tests are written for the new/changed functionality
+2. All existing tests still pass
+3. TypeScript compiles without errors
+4. Linting passes (warnings are acceptable, errors are not)
+5. Production build succeeds
 
 **Note**: Do not run dev server commands (`npm run dev`, `npm run dev:full`, `npm run electron`) just to verify code validity. Use the above commands instead.
 
